@@ -8,7 +8,7 @@ class KOF {
         // game_map里的this为root，用于索引全部的对象
         this.game_map = new GameMap(this);
 
-        this.Players = [
+        this.players = [
             new Kyo(this, {
                 id: 0,
                 x: 200,

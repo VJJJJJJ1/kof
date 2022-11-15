@@ -57,9 +57,14 @@ export class Player extends AcGameObject {
         }
 
         // console.log(this.pressed_keys);
-        console.log(this.status);
+        // console.log(this.status);
         if (this.status === 0 || this.status === 1) {
-            if (w) {
+            if (space) {
+                this.status = 4;
+                this.vx = 0;
+                this.frame_current_cnt = 0;
+            }
+            else if (w) {
                 // 三种起跳方式：
                 // 1 竖直
                 // 2 向后45°
@@ -70,6 +75,7 @@ export class Player extends AcGameObject {
 
                 this.vy = -this.speedy;
                 this.status = 3; // 0: idle， 1：向前， 2：向后， 3：跳跃， 4：攻击， 5：被打， 6：死亡
+                this.frame_current_cnt = 0;
             }
             else if (d) {
                 this.vx = this.speedx;
@@ -101,7 +107,11 @@ export class Player extends AcGameObject {
     //     }
 
     //     if (this.status === 0 || this.status === 1) {
-    //         if (w) {
+    //         if (space) {
+    //             this.status = 4;
+    //             this.vx = 0;
+    //             this.frame_current_cnt = 0;
+    //         } else if (w) {
     //             if (d) {
     //                 this.vx = this.speedx;
     //             } else if (a) {
@@ -109,7 +119,7 @@ export class Player extends AcGameObject {
     //             } else {
     //                 this.vx = 0;
     //             }
-    //             this.vy = -this.speedy;
+    //             this.vy = this.speedy;
     //             this.status = 3;
     //             this.frame_current_cnt = 0;
     //         } else if (d) {
@@ -124,6 +134,7 @@ export class Player extends AcGameObject {
     //         }
     //     }
     // }
+
 
 
     update_move() {
@@ -151,9 +162,21 @@ export class Player extends AcGameObject {
         // console.log('y:' + this.y);
     }
 
+    update_direction() {
+        if (this.status === 6) return;
+        let players = this.root.players;
+        if (players[0] && players[1]) {
+            let me = this, you = players[1 - this.id];
+            if (me.x < you.x) me.direction = 1;
+            else me.direction = -1;
+        }
+
+    }
+
     update() {
         this.update_controller();
         this.update_move();
+        this.update_direction();
         this.render();
     }
 
@@ -167,11 +190,32 @@ export class Player extends AcGameObject {
 
         let obj = this.animations.get(status);
         if (obj && obj.loaded) {
-            let k = parseInt(this.frame_current_cnt / obj.frame_rate) % obj.frame_cnt;
-            let image = obj.gif.frames[k].image;
-            this.ctx.drawImage(image, this.x, this.y + obj.offset_y, image.width * obj.scale, image.height * obj.scale);
+            if (this.direction === -1) {
+
+                this.ctx.save();
+                this.ctx.scale(-1, 1);
+                this.ctx.translate(-this.root.game_map.$canvas.width(), 0);
+
+                let k = parseInt(this.frame_current_cnt / obj.frame_rate) % obj.frame_cnt;
+                let image = obj.gif.frames[k].image;
+                this.ctx.drawImage(image, this.root.game_map.$canvas.width() - this.x - this.width, this.y + obj.offset_y, image.width * obj.scale, image.height * obj.scale);
+                this.ctx.restore();
+            }
+            else {
+                let k = parseInt(this.frame_current_cnt / obj.frame_rate) % obj.frame_cnt;
+                let image = obj.gif.frames[k].image;
+                this.ctx.drawImage(image, this.x, this.y + obj.offset_y, image.width * obj.scale, image.height * obj.scale);
+
+            }
 
         }
+
+        if (status === 4) {
+            if (this.frame_current_cnt === obj.frame_rate * (obj.frame_cnt - 1)) {
+                this.status = 0;
+            }
+        }
+
         this.frame_current_cnt++;
     }
 }
