@@ -1,5 +1,9 @@
 import { GameMap } from "/static/js/game_map/base.js";
 import { Kyo } from "/static/js/player/kyo.js";
+// import { Snake } from "/static/js/player/snake.js";
+// import { Mai } from "/static/js/player/mai.js";
+// import { Iori } from "/static/js/player/iori.js";
+import { Kul } from "/static/js/player/kul.js";
 
 class KOF {
     constructor(id) {
@@ -18,7 +22,7 @@ class KOF {
                 color: 'blue',
             }),
 
-            new Kyo(this, {
+            new Kul(this, {
                 id: 1,
                 x: 900,
                 y: 0,

@@ -33,6 +33,9 @@ export class Player extends AcGameObject {
 
         // 当前记录的帧数
         this.frame_current_cnt = 0;
+
+        this.hp = 100;
+        this.$hp = this.root.$kof.find(`.kof-head-hp-${this.id}>div`);
     }
 
     start() {
@@ -138,9 +141,7 @@ export class Player extends AcGameObject {
 
 
     update_move() {
-        if (this.status === 3) {
-            this.vy += this.gravity;
-        }
+        this.vy += this.gravity;
 
 
         this.x += this.vx * this.timedelta / 1000;
@@ -149,7 +150,7 @@ export class Player extends AcGameObject {
         if (this.y > 450) {
             this.y = 450;
             this.vy = 0;
-            this.status = 0;
+            if (this.status === 3) this.status = 0;
         }
 
         if (this.x < 0) {
@@ -158,6 +159,9 @@ export class Player extends AcGameObject {
         else if (this.x + this.width > this.root.game_map.$canvas.width()) {
             this.x = this.root.game_map.$canvas.width() - this.width;
         }
+
+
+        if (this.y <= 25) this.y = 25;
         // console.log("v:" + this.vy);
         // console.log('y:' + this.y);
     }
@@ -173,16 +177,104 @@ export class Player extends AcGameObject {
 
     }
 
+
+    is_collision(r1, r2) {
+        // console.log(Math.max(r1.x1, r2.x1), Math.min(r1.x2, r2.x2));
+        if (Math.max(r1.x1, r2.x1) > Math.min(r1.x2, r2.x2)) {
+            return false;
+        }
+        if (Math.max(r1.y1, r2.y1) > Math.min(r1.y2, r2.y2))
+            return false;
+        return true;
+
+    }
+
+    is_attacked() {
+        if (this.status === 6) return;
+        this.status = 5;
+        this.frame_current_cnt = 0;
+
+        this.hp = Math.max(this.hp - 10, 0);
+        this.$hp_div = this.$hp.find(`div`);
+
+        // animate函数实现渐变效果
+        this.$hp_div.animate({
+            width: this.$hp.parent().width() * this.hp / 100
+        }, 200);
+        this.$hp.animate({
+            width: this.$hp.parent().width() * this.hp / 100
+        }, 300);
+
+        if (this.hp <= 0) {
+            this.status = 6;
+            this.frame_current_cnt = 0;
+            this.vx = 0;
+        }
+        console.log(this);
+    }
+
+    update_attack() {
+        if (this.status === 4 && this.frame_current_cnt === 31) {
+            let me = this, you = this.root.players[1 - this.id];
+            let r1;
+            if (this.direction === 1) {
+                r1 = {
+                    x1: me.x + 120,
+                    y1: me.y + 40,
+                    x2: me.x + 120 + 100,
+                    y2: me.y + 40 + 20,
+                };
+            } else {
+                r1 = {
+                    x1: me.x + me.width - 120 - 100,
+                    y1: me.y + 40,
+                    x2: me.x + me.width - 120 - 100 + 100,
+                    y2: me.y + 40 + 20,
+                };
+            }
+
+            let r2 = {
+                x1: you.x,
+                y1: you.y,
+                x2: you.x + you.width,
+                y2: you.y + you.height
+            };
+
+
+
+            if (this.is_collision(r1, r2)) {
+                you.is_attacked();
+                console.log(r1, r2);
+            }
+        }
+    }
+
     update() {
         this.update_controller();
         this.update_move();
         this.update_direction();
+        this.update_attack();
         this.render();
     }
 
     render() {
-        // this.ctx.fillStyle = this.color;
+        // // 碰撞盒子
+        // this.ctx.fillStyle = 'blue';
         // this.ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        // if (this.direction === 1) {
+        //     this.ctx.fillStyle = 'red';
+        //     // this.ctx.fillRect(this.x + 205, this.y + 40, 20, 20);
+        //     this.ctx.fillRect(this.x + 120, this.y + 40, 100, 20);
+        // }
+        // else {
+        //     this.ctx.fillStyle = 'red';
+        //     // this.ctx.fillRect(this.x - 225 + this.width, this.y + 40, 20, 20);
+        //     this.ctx.fillRect(this.x + this.width - 120 - 100, this.y + 40, 100, 20);
+        // }
+
+        // // this.ctx.fillStyle = this.color;
+        // // this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
         let status = this.status;
 
@@ -205,14 +297,18 @@ export class Player extends AcGameObject {
                 let k = parseInt(this.frame_current_cnt / obj.frame_rate) % obj.frame_cnt;
                 let image = obj.gif.frames[k].image;
                 this.ctx.drawImage(image, this.x, this.y + obj.offset_y, image.width * obj.scale, image.height * obj.scale);
-
             }
 
         }
 
-        if (status === 4) {
+        if (status === 4 || status === 5 || status === 6) {
             if (this.frame_current_cnt === obj.frame_rate * (obj.frame_cnt - 1)) {
-                this.status = 0;
+                if (this.status === 6) {
+                    this.frame_current_cnt--;
+                } else {
+                    this.status = 0;
+                }
+
             }
         }
 
