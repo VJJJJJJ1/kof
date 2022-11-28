@@ -8,7 +8,6 @@ import { Kul } from "/static/js/player/kul.js";
 class KOF {
     constructor(id) {
         this.$kof = $('#' + id);
-        // console.log(this.$kof);
         // game_map里的this为root，用于索引全部的对象
         this.game_map = new GameMap(this);
 
